@@ -51,7 +51,7 @@ self.addEventListener('fetch', event => {
   }
 
   // Network-first strategy for API/HTML requests
-  if (request.method === 'GET' && (
+  if (request.method === 'GET' && request.headers.has('accept') && (
     request.headers.get('accept').includes('text/html') ||
     url.pathname.startsWith('/api/')
   )) {
@@ -80,8 +80,8 @@ self.addEventListener('fetch', event => {
           return response;
         }
         return fetch(request).then(response => {
-          // Check if valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
+          // Check if valid response (allow basic and cors types)
+          if (!response || response.status !== 200 || (response.type !== 'basic' && response.type !== 'cors')) {
             return response;
           }
           const responseClone = response.clone();

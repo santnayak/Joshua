@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.db.models import Avg
-from datetime import datetime, timedelta
+from django.utils import timezone
+from datetime import timedelta
 from .models import BloodPressure, SugarLevel, Weight
 from .forms import BloodPressureForm, SugarLevelForm, WeightForm
 
@@ -39,7 +40,7 @@ def dashboard(request):
     weight_readings = Weight.objects.filter(user=request.user)[:30]
     
     # Calculate averages for the last 7 days
-    seven_days_ago = datetime.now() - timedelta(days=7)
+    seven_days_ago = timezone.now() - timedelta(days=7)
     
     avg_systolic = BloodPressure.objects.filter(
         user=request.user, 
