@@ -1,0 +1,324 @@
+{% extends 'health_tracker/base.html' %}
+
+{% block title %}Dashboard - Health Tracker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>Welcome, {{ user.username }}!</h2>
+        <p class="text-muted">Your health data at a glance</p>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="card stat-card">
+            <div class="stat-label">Avg Blood Pressure (7 days)</div>
+            <div class="stat-value">
+                {% if avg_systolic and avg_diastolic %}
+                    {{ avg_systolic|floatformat:0 }}/{{ avg_diastolic|floatformat:0 }}
+                {% else %}
+                    --
+                {% endif %}
+            </div>
+            <small class="text-muted">mmHg</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card stat-card">
+            <div class="stat-label">Avg Sugar Level (7 days)</div>
+            <div class="stat-value">
+                {% if avg_glucose %}
+                    {{ avg_glucose|floatformat:1 }}
+                {% else %}
+                    --
+                {% endif %}
+            </div>
+            <small class="text-muted">mg/dL</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card stat-card">
+            <div class="stat-label">Avg Weight (7 days)</div>
+            <div class="stat-value">
+                {% if avg_weight %}
+                    {{ avg_weight|floatformat:1 }}
+                {% else %}
+                    --
+                {% endif %}
+            </div>
+            <small class="text-muted">kg</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="card stat-card">
+            <div class="stat-label">Quick Actions</div>
+            <div class="mt-2">
+                <a href="{% url 'add_blood_pressure' %}" class="btn btn-sm btn-primary mb-1 w-100">+ BP</a>
+                <a href="{% url 'add_sugar_level' %}" class="btn btn-sm btn-primary mb-1 w-100">+ Sugar</a>
+                <a href="{% url 'add_weight' %}" class="btn btn-sm btn-primary w-100">+ Weight</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">Blood Pressure Trend</div>
+            <div class="card-body">
+                <canvas id="bpChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">Sugar Level Trend</div>
+            <div class="card-body">
+                <canvas id="sugarChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">Weight Trend</div>
+            <div class="card-body">
+                <canvas id="weightChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">Recent Activity Summary</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Blood Pressure:</strong> {{ blood_pressure_readings|length }} readings
+                </div>
+                <div class="mb-3">
+                    <strong>Sugar Level:</strong> {{ sugar_level_readings|length }} readings
+                </div>
+                <div class="mb-3">
+                    <strong>Weight:</strong> {{ weight_readings|length }} readings
+                </div>
+                <hr>
+                <p class="text-muted mb-0">
+                    <small>Keep tracking your health data regularly for better insights!</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Readings -->
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">Recent Blood Pressure</div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                {% if blood_pressure_readings %}
+                    {% for reading in blood_pressure_readings|slice:":10" %}
+                    <div class="reading-item">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ reading.systolic }}/{{ reading.diastolic }} mmHg</strong>
+                            <small class="text-muted">{{ reading.recorded_at|date:"M d, Y H:i" }}</small>
+                        </div>
+                        {% if reading.notes %}
+                        <small class="text-muted">{{ reading.notes }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No readings yet. <a href="{% url 'add_blood_pressure' %}">Add your first reading</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">Recent Sugar Levels</div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                {% if sugar_level_readings %}
+                    {% for reading in sugar_level_readings|slice:":10" %}
+                    <div class="reading-item">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ reading.glucose_level }} mg/dL</strong>
+                            <small class="text-muted">{{ reading.recorded_at|date:"M d, Y H:i" }}</small>
+                        </div>
+                        <small class="text-muted">{{ reading.get_meal_timing_display }}</small>
+                        {% if reading.notes %}
+                        <br><small class="text-muted">{{ reading.notes }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No readings yet. <a href="{% url 'add_sugar_level' %}">Add your first reading</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">Recent Weight</div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                {% if weight_readings %}
+                    {% for reading in weight_readings|slice:":10" %}
+                    <div class="reading-item">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ reading.weight }} kg</strong>
+                            <small class="text-muted">{{ reading.recorded_at|date:"M d, Y H:i" }}</small>
+                        </div>
+                        {% if reading.notes %}
+                        <small class="text-muted">{{ reading.notes }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No readings yet. <a href="{% url 'add_weight' %}">Add your first reading</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Prepare data for charts
+    const bpData = [
+        {% for reading in blood_pressure_readings|slice:":30" reversed %}
+        {
+            date: '{{ reading.recorded_at|date:"M d" }}',
+            systolic: {{ reading.systolic }},
+            diastolic: {{ reading.diastolic }}
+        },
+        {% endfor %}
+    ];
+    
+    const sugarData = [
+        {% for reading in sugar_level_readings|slice:":30" reversed %}
+        {
+            date: '{{ reading.recorded_at|date:"M d" }}',
+            level: {{ reading.glucose_level }}
+        },
+        {% endfor %}
+    ];
+    
+    const weightData = [
+        {% for reading in weight_readings|slice:":30" reversed %}
+        {
+            date: '{{ reading.recorded_at|date:"M d" }}',
+            weight: {{ reading.weight }}
+        },
+        {% endfor %}
+    ];
+    
+    // Blood Pressure Chart
+    if (bpData.length > 0) {
+        const bpCtx = document.getElementById('bpChart').getContext('2d');
+        new Chart(bpCtx, {
+            type: 'line',
+            data: {
+                labels: bpData.map(d => d.date),
+                datasets: [{
+                    label: 'Systolic',
+                    data: bpData.map(d => d.systolic),
+                    borderColor: 'rgb(102, 126, 234)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Diastolic',
+                    data: bpData.map(d => d.diastolic),
+                    borderColor: 'rgb(118, 75, 162)',
+                    backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Sugar Level Chart
+    if (sugarData.length > 0) {
+        const sugarCtx = document.getElementById('sugarChart').getContext('2d');
+        new Chart(sugarCtx, {
+            type: 'line',
+            data: {
+                labels: sugarData.map(d => d.date),
+                datasets: [{
+                    label: 'Glucose Level (mg/dL)',
+                    data: sugarData.map(d => d.level),
+                    borderColor: 'rgb(102, 126, 234)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Weight Chart
+    if (weightData.length > 0) {
+        const weightCtx = document.getElementById('weightChart').getContext('2d');
+        new Chart(weightCtx, {
+            type: 'line',
+            data: {
+                labels: weightData.map(d => d.date),
+                datasets: [{
+                    label: 'Weight (kg)',
+                    data: weightData.map(d => d.weight),
+                    borderColor: 'rgb(102, 126, 234)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
