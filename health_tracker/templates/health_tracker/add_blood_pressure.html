@@ -1,0 +1,61 @@
+{% extends 'health_tracker/base.html' %}
+
+{% block title %}Add Blood Pressure - Health Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Add Blood Pressure Reading</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.systolic.id_for_label }}" class="form-label">Systolic Pressure (mmHg)</label>
+                        {{ form.systolic }}
+                        {% if form.systolic.errors %}
+                            <div class="text-danger">{{ form.systolic.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.diastolic.id_for_label }}" class="form-label">Diastolic Pressure (mmHg)</label>
+                        {{ form.diastolic }}
+                        {% if form.diastolic.errors %}
+                            <div class="text-danger">{{ form.diastolic.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">Notes (Optional)</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger">{{ form.notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save Reading</button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6>Understanding Blood Pressure:</h6>
+                <ul class="mb-0">
+                    <li>Normal: Less than 120/80 mmHg</li>
+                    <li>Elevated: 120-129/less than 80 mmHg</li>
+                    <li>High (Stage 1): 130-139/80-89 mmHg</li>
+                    <li>High (Stage 2): 140 or higher/90 or higher mmHg</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
